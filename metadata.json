@@ -1,0 +1,6 @@
+{
+  "name": "KOVA — Contemporary Objects & Everyday Goods",
+  "description": "Single-brand contemporary storefront for architectural tabletop, lighting, desk, and carry objects with PostgreSQL persistence, verified test-mode checkout, customer accounts, and admin catalogue & order management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

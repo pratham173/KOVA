@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --kova-canvas: #E6E1D8;
+  --kova-canvas-wash-a: rgba(255, 252, 245, 0.72);
+  --kova-canvas-wash-b: rgba(198, 190, 176, 0.42);
+  --kova-surface: #F7F5F0;
+  --kova-surface-solid: #FFFFFF;
+  --kova-ink: #171716;
+  --kova-ink-muted: #5C5851;
+  --kova-border: rgba(23, 23, 22, 0.10);
+
+  /* Layered architectural glassmorphism — Light */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.84);
+  --glass-border: rgba(23, 23, 22, 0.10);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 8px 30px rgba(23, 23, 22, 0.06);
+}
+
+.dark {
+  --kova-canvas: #0E0E10;
+  --kova-canvas-wash-a: rgba(59, 102, 245, 0.07);
+  --kova-canvas-wash-b: rgba(214, 207, 196, 0.05);
+  --kova-surface: #17171A;
+  --kova-surface-solid: #1B1B1F;
+  --kova-ink: #F3F1EC;
+  --kova-ink-muted: #A4A097;
+  --kova-border: rgba(255, 255, 255, 0.10);
+
+  /* Layered architectural glassmorphism — Dark */
+  --glass-bg: rgba(24, 24, 28, 0.68);
+  --glass-bg-strong: rgba(24, 24, 28, 0.84);
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 12px 36px rgba(0, 0, 0, 0.42);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--kova-canvas);
+    color: var(--kova-ink);
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  body {
+    background-color: var(--kova-canvas);
+    background-image:
+      radial-gradient(ellipse 75% 45% at 15% 0%, var(--kova-canvas-wash-a), transparent 70%),
+      radial-gradient(ellipse 65% 45% at 88% 18%, var(--kova-canvas-wash-b), transparent 70%);
+    background-attachment: fixed;
+    color: var(--kova-ink);
+  }
+
+  .dark body {
+    letter-spacing: 0.008em;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid #3B66F5;
+    outline-offset: 2px;
+  }
+
+  /* Crisp architectural squared icon strokes across Lucide SVGs */
+  svg.lucide {
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    stroke-width: 1.75;
+  }
+}
+
+/* Tasteful optical glassmorphism surfaces */
+.glass-bar {
+  background-color: var(--glass-bg-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+.glass-surface {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+.glass-overlay {
+  background-color: rgba(20, 20, 19, 0.52);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 14px 36px rgba(0, 0, 0, 0.28);
+}
+
+.glass-overlay-light {
+  background-color: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 16px 38px rgba(0, 0, 0, 0.22);
+}
+
+.dark .glass-overlay-light {
+  background-color: rgba(22, 22, 26, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 16px 38px rgba(0, 0, 0, 0.45);
+}
+
+.glass-dark-panel {
+  background-color: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
