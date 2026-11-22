@@ -3,28 +3,14 @@ import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { apiRouter } from './src/server/routes.ts';
+import { createApiApp } from './src/server/app.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  const app = express();
+  const app = createApiApp();
   const PORT = Number(process.env.PORT) || 3000;
-
-  // Capture raw request body for Razorpay webhook HMAC verification
-  app.use(
-    express.json({
-      limit: '2mb',
-      verify: (req, _res, buf) => {
-        (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
-      },
-    })
-  );
-
-  // Mount API routes
-  app.use('/api', apiRouter);
-
   const isProd = process.env.NODE_ENV === 'production';
 
   if (!isProd) {

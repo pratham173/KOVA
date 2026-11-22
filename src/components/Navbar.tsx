@@ -34,7 +34,7 @@ const NAV_LINKS = [
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export function Navbar() {
-  const { path, navigate, user, cart, setCartOpen, theme, toggleTheme } = useStore();
+  const { path, navigate, user, cart, theme, toggleTheme } = useStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -185,17 +185,25 @@ export function Navbar() {
               <span className="sm:hidden sr-only">{user ? 'Account' : 'Sign In'}</span>
             </a>
 
-            <motion.button
-              type="button"
+            <motion.a
+              href="/cart"
               whileTap={{ scale: 0.96 }}
-              onClick={() => setCartOpen(true)}
+              onClick={(e) => {
+                e.preventDefault();
+                handleNav('/cart');
+              }}
               data-testid="cart-trigger"
+              aria-current={pathname === '/cart' ? 'page' : undefined}
               aria-label={`Open shopping cart with ${cart.itemCount} items`}
-              className="h-9 px-3 rounded-[3px] bg-[#171716] dark:bg-[#F3F1EC] text-white dark:text-[#141416] text-xs font-medium inline-flex items-center gap-1.5 hover:bg-[#3B66F5] dark:hover:bg-[#6389FF] dark:hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className={`h-9 px-3 rounded-[3px] text-xs font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                pathname === '/cart'
+                  ? 'bg-[#3B66F5] text-white'
+                  : 'bg-[#171716] dark:bg-[#F3F1EC] text-white dark:text-[#141416] hover:bg-[#3B66F5] dark:hover:bg-[#6389FF] dark:hover:text-white'
+              }`}
             >
               <ShoppingBag className="w-3.5 h-3.5" aria-hidden="true" />
               <span className="font-mono tabular-nums">({cart.itemCount})</span>
-            </motion.button>
+            </motion.a>
           </div>
         </div>
 

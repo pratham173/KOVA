@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import express from 'express';
 import { and, asc, count, desc, eq, gte, ilike, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { db } from '../db/index.ts';
+import { db, isDatabaseConfigured } from '../db/index.ts';
 import {
   categories,
   newsletterSubscribers,
@@ -47,8 +47,22 @@ import { getPublicPaymentConfig, issueSandboxSignedCallback } from './razorpay.t
 
 export const apiRouter = express.Router();
 
-// Ensure initial demo data is seeded lazily on first API request (never at startup)
-apiRouter.use(async (_req, _res, next) => {
+apiRouter.get('/health', (_req, res) => {
+  res.json({
+    ok: true,
+    databaseConfigured: isDatabaseConfigured,
+  });
+});
+
+// Fail fast with an actionable message if PostgreSQL env vars are not set in production
+apiRouter.use(async (_req, res, next) => {
+  if (!isDatabaseConfigured) {
+    res.status(503).json({
+      error:
+        'Database is not configured. Add DATABASE_URL (PostgreSQL) in your Vercel Environment Variables and redeploy.',
+    });
+    return;
+  }
   try {
     await ensureSeeded();
   } catch (err) {

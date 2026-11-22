@@ -274,7 +274,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           : 'Added to cart successfully.';
         showToast(label, 'success', {
           label: 'View Cart',
-          onClick: () => setCartOpen(true),
+          onClick: () => navigate('/cart'),
         });
         return true;
       } catch (err: any) {
@@ -282,7 +282,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
     },
-    [showToast, syncCartState, user]
+    [navigate, showToast, syncCartState, user]
   );
 
   const updateCartQuantity = useCallback(

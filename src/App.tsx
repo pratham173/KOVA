@@ -2,7 +2,7 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { Check, AlertTriangle, X } from 'lucide-react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Navbar } from './components/Navbar';
-import { CartDrawer } from './components/CartDrawer';
+import { CartView } from './components/CartView';
 import { HomeView } from './components/HomeView';
 import { ProductDetailView } from './components/ProductDetailView';
 import { AuthView } from './components/AuthView';
@@ -27,6 +27,8 @@ function AppRouter() {
     view = <AuthView mode="login" />;
   } else if (pathname === '/signup') {
     view = <AuthView mode="signup" />;
+  } else if (pathname === '/cart') {
+    view = <CartView />;
   } else if (pathname === '/checkout') {
     view = <CheckoutView />;
   } else if (pathname.startsWith('/account/orders/')) {
@@ -54,8 +56,6 @@ function AppRouter() {
           {view}
         </motion.div>
       </AnimatePresence>
-
-      <CartDrawer />
 
       <AnimatePresence>
         {toast && (

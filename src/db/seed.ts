@@ -1,4 +1,4 @@
-import { count, eq } from 'drizzle-orm';
+import { count, eq, sql } from 'drizzle-orm';
 import { db } from './index.ts';
 import { categories, products, users } from './schema.ts';
 import { hashPassword } from '../server/paymentCrypto.ts';
@@ -189,7 +189,199 @@ const SEED_PRODUCTS = [
 
 let seedPromise: Promise<void> | null = null;
 
+async function ensureSchemaTables(): Promise<void> {
+  // Check whether tables are already provisioned (e.g., managed Cloud SQL with least-privilege DB role)
+  try {
+    const check = await db.execute(sql`
+      SELECT
+        to_regclass('public.users') AS users_tbl,
+        to_regclass('public.products') AS products_tbl,
+        to_regclass('public.orders') AS orders_tbl,
+        to_regclass('public.newsletter_subscribers') AS newsletter_tbl
+    `);
+    const row = (check as unknown as { rows?: Array<Record<string, unknown>> }).rows?.[0];
+    if (row?.users_tbl && row?.products_tbl && row?.orders_tbl && row?.newsletter_tbl) {
+      return;
+    }
+  } catch {
+    // Proceed to DDL bootstrap attempt if inspection fails
+  }
+
+  try {
+    await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "users" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "uid" text NOT NULL UNIQUE,
+      "email" text NOT NULL UNIQUE,
+      "name" text NOT NULL,
+      "password_hash" text,
+      "role" text DEFAULT 'customer' NOT NULL,
+      "auth_provider" text DEFAULT 'email' NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "user_sessions" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "user_id" integer NOT NULL REFERENCES "users"("id") ON DELETE cascade,
+      "token_hash" text NOT NULL UNIQUE,
+      "expires_at" timestamp NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "categories" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "name" text NOT NULL,
+      "slug" text NOT NULL UNIQUE,
+      "description" text DEFAULT '' NOT NULL,
+      "sort_order" integer DEFAULT 0 NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "products" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "category_id" integer REFERENCES "categories"("id") ON DELETE set null,
+      "name" text NOT NULL,
+      "slug" text NOT NULL UNIQUE,
+      "sku" text NOT NULL UNIQUE,
+      "summary" text NOT NULL,
+      "description" text NOT NULL,
+      "price_minor" integer NOT NULL,
+      "currency" text DEFAULT 'INR' NOT NULL,
+      "stock" integer DEFAULT 0 NOT NULL,
+      "images" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "materials" text DEFAULT '' NOT NULL,
+      "dimensions" text DEFAULT '' NOT NULL,
+      "is_visible" boolean DEFAULT true NOT NULL,
+      "is_featured" boolean DEFAULT false NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "carts" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "user_id" integer UNIQUE REFERENCES "users"("id") ON DELETE cascade,
+      "guest_token" text UNIQUE,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "cart_items" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "cart_id" integer NOT NULL REFERENCES "carts"("id") ON DELETE cascade,
+      "product_id" integer NOT NULL REFERENCES "products"("id") ON DELETE cascade,
+      "quantity" integer DEFAULT 1 NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS "cart_items_cart_product_idx"
+      ON "cart_items" USING btree ("cart_id", "product_id");
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "orders" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "order_number" text NOT NULL UNIQUE,
+      "user_id" integer NOT NULL REFERENCES "users"("id") ON DELETE restrict,
+      "payment_method" text DEFAULT 'online' NOT NULL,
+      "payment_status" text DEFAULT 'paid' NOT NULL,
+      "fulfilment_status" text DEFAULT 'confirmed' NOT NULL,
+      "subtotal_minor" integer NOT NULL,
+      "shipping_minor" integer NOT NULL,
+      "tax_minor" integer NOT NULL,
+      "total_minor" integer NOT NULL,
+      "currency" text DEFAULT 'INR' NOT NULL,
+      "shipping_name" text NOT NULL,
+      "shipping_email" text NOT NULL,
+      "shipping_phone" text NOT NULL,
+      "shipping_address" text NOT NULL,
+      "shipping_city" text NOT NULL,
+      "shipping_postal_code" text NOT NULL,
+      "shipping_country" text DEFAULT 'India' NOT NULL,
+      "tracking_note" text DEFAULT '' NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "payment_method" text DEFAULT 'online' NOT NULL;
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "order_items" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "order_id" integer NOT NULL REFERENCES "orders"("id") ON DELETE cascade,
+      "product_id" integer REFERENCES "products"("id") ON DELETE set null,
+      "product_name" text NOT NULL,
+      "product_sku" text NOT NULL,
+      "product_image" text DEFAULT '' NOT NULL,
+      "unit_price_minor" integer NOT NULL,
+      "quantity" integer NOT NULL,
+      "line_total_minor" integer NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "payment_attempts" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "idempotency_key" text NOT NULL UNIQUE,
+      "user_id" integer NOT NULL REFERENCES "users"("id") ON DELETE restrict,
+      "order_id" integer UNIQUE REFERENCES "orders"("id") ON DELETE set null,
+      "provider" text NOT NULL,
+      "provider_order_id" text NOT NULL UNIQUE,
+      "provider_payment_id" text UNIQUE,
+      "status" text DEFAULT 'created' NOT NULL,
+      "amount_minor" integer NOT NULL,
+      "subtotal_minor" integer NOT NULL,
+      "shipping_minor" integer NOT NULL,
+      "tax_minor" integer NOT NULL,
+      "currency" text DEFAULT 'INR' NOT NULL,
+      "cart_snapshot" jsonb NOT NULL,
+      "shipping_details" jsonb NOT NULL,
+      "failure_reason" text,
+      "verified_at" timestamp,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "newsletter_subscribers" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "email" text NOT NULL UNIQUE,
+      "source" text DEFAULT 'footer' NOT NULL,
+      "subscribed_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+  } catch (err: unknown) {
+    const code = (err as { code?: string; cause?: { code?: string } })?.cause?.code
+      ?? (err as { code?: string })?.code;
+    // 42501 = insufficient_privilege (tables managed externally via migrations)
+    if (code !== '42501') {
+      throw err;
+    }
+  }
+}
+
 async function runSeedInternal(): Promise<void> {
+  await ensureSchemaTables();
+
   // Seed default demo admin and customer accounts idempotently
   const adminEmail = 'admin@kovagoods.com';
   const customerEmail = 'maya@example.com';
