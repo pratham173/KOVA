@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Banknote, Check, Minus, Plus, ShieldCheck, Truck } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useStore } from '../context/StoreContext';
 import { apiFetch } from '../lib/api';
 import { formatCurrency } from '../lib/commerce';
 import type { Product } from '../types/store';
 import { ProductImage } from './ProductImage';
+import { ZoomableProductImage } from './ZoomableProductImage';
 
 interface ProductDetailViewProps {
   slug: string;
@@ -115,26 +116,15 @@ export function ProductDetailView({ slug }: ProductDetailViewProps) {
 
       {/* Contiguous Purchase Module */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-        {/* Sticky Left Gallery */}
+        {/* Sticky Left Gallery with Precision Detail Magnification */}
         <div className="lg:col-span-7 lg:sticky lg:top-24 space-y-3">
-          <div className="aspect-[4/3] rounded-sm overflow-hidden bg-[#DFD9CE] dark:bg-[#1C1C20] border border-[#171716]/10 dark:border-white/10 relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeImage}
-                initial={{ opacity: 0.4, scale: 1.01 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0.4 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full h-full"
-              >
-                <ProductImage
-                  src={activeImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
+          <ZoomableProductImage
+            src={activeImage}
+            alt={product.name}
+            gallery={gallery}
+            activeIndex={selectedImageIdx}
+            onSelectIndex={setSelectedImageIdx}
+          />
 
           {gallery.length > 1 && (
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
