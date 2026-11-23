@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema.ts';
+import { isTransientIdlePoolError } from './poolResilience.ts';
 
 declare global {
   var _postgresPool: Pool | undefined;
@@ -22,6 +23,16 @@ export const createPool = () => {
     const connectionString = getConnectionString();
     const isServerless = Boolean(process.env.VERCEL);
 
+    const commonPoolOptions = {
+      max: isServerless ? 5 : 10,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 15000,
+      statement_timeout: 15000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+      allowExitOnIdle: isServerless,
+    };
+
     if (connectionString) {
       const isLocal =
         connectionString.includes('localhost') ||
@@ -31,11 +42,7 @@ export const createPool = () => {
       global._postgresPool = new Pool({
         connectionString,
         ssl: isLocal ? undefined : { rejectUnauthorized: false },
-        max: isServerless ? 5 : 10,
-        idleTimeoutMillis: isServerless ? 10000 : 30000,
-        connectionTimeoutMillis: 15000,
-        statement_timeout: 15000,
-        allowExitOnIdle: isServerless,
+        ...commonPoolOptions,
       });
     } else {
       global._postgresPool = new Pool({
@@ -44,16 +51,18 @@ export const createPool = () => {
         user: process.env.SQL_USER,
         password: process.env.SQL_PASSWORD,
         database: process.env.SQL_DB_NAME,
-        max: isServerless ? 5 : 10,
-        idleTimeoutMillis: isServerless ? 10000 : 30000,
-        connectionTimeoutMillis: 15000,
-        statement_timeout: 15000,
-        allowExitOnIdle: isServerless,
+        ...commonPoolOptions,
       });
     }
 
     global._postgresPool.on('error', (err) => {
-      console.error('Unexpected error on idle SQL pool client:', err);
+      // Scale-to-zero databases (Cloud SQL, Neon, Supabase poolers) routinely
+      // close idle backend sockets; pg.Pool automatically evicts the client
+      // and establishes a fresh connection on the next query.
+      if (isTransientIdlePoolError(err)) {
+        return;
+      }
+      console.error('SQL pool client error:', err instanceof Error ? err.message : String(err));
     });
   }
   return global._postgresPool;
