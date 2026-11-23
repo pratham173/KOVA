@@ -25,9 +25,31 @@ export default defineConfig(() => {
           if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {
             fs.cpSync(srcAssets, distAssets, {recursive: true, force: true});
           }
+          // Strip unreferenced workspace attachment screenshots from production dist/
+          const unusedAttachments = path.resolve(distDir, 'assets/aistudio');
+          if (fs.existsSync(unusedAttachments)) {
+            fs.rmSync(unusedAttachments, {recursive: true, force: true});
+          }
         },
       },
     ],
+    build: {
+      target: 'es2022',
+      cssCodeSplit: true,
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('firebase')) return 'vendor-firebase';
+            if (id.includes('motion') || id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            if (id.includes('react-dom') || id.includes('/react/')) return 'vendor-react';
+            return undefined;
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

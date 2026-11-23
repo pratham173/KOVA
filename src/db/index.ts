@@ -34,6 +34,8 @@ export const createPool = () => {
         max: isServerless ? 5 : 10,
         idleTimeoutMillis: isServerless ? 10000 : 30000,
         connectionTimeoutMillis: 15000,
+        statement_timeout: 15000,
+        allowExitOnIdle: isServerless,
       });
     } else {
       global._postgresPool = new Pool({
@@ -45,6 +47,8 @@ export const createPool = () => {
         max: isServerless ? 5 : 10,
         idleTimeoutMillis: isServerless ? 10000 : 30000,
         connectionTimeoutMillis: 15000,
+        statement_timeout: 15000,
+        allowExitOnIdle: isServerless,
       });
     }
 

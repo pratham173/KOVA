@@ -1,16 +1,45 @@
+import { Suspense, lazy } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { Check, AlertTriangle, X } from 'lucide-react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Navbar } from './components/Navbar';
-import { CartView } from './components/CartView';
 import { HomeView } from './components/HomeView';
-import { ProductDetailView } from './components/ProductDetailView';
-import { AuthView } from './components/AuthView';
-import { CheckoutView } from './components/CheckoutView';
-import { AccountView } from './components/AccountView';
-import { AdminView } from './components/AdminView';
+
+const CartView = lazy(() =>
+  import('./components/CartView').then((m) => ({ default: m.CartView }))
+);
+const ProductDetailView = lazy(() =>
+  import('./components/ProductDetailView').then((m) => ({ default: m.ProductDetailView }))
+);
+const AuthView = lazy(() =>
+  import('./components/AuthView').then((m) => ({ default: m.AuthView }))
+);
+const CheckoutView = lazy(() =>
+  import('./components/CheckoutView').then((m) => ({ default: m.CheckoutView }))
+);
+const AccountView = lazy(() =>
+  import('./components/AccountView').then((m) => ({ default: m.AccountView }))
+);
+const AdminView = lazy(() =>
+  import('./components/AdminView').then((m) => ({ default: m.AdminView }))
+);
 
 const PAGE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+function RouteFallback() {
+  return (
+    <div
+      className="min-h-[60vh] flex items-center justify-center pt-24 px-4"
+      aria-busy="true"
+      aria-label="Loading view"
+    >
+      <div className="w-full max-w-[1440px] space-y-5">
+        <div className="h-7 w-40 rounded-sm bg-black/8 dark:bg-white/10 animate-pulse" />
+        <div className="h-64 rounded-sm bg-black/5 dark:bg-white/5 animate-pulse" />
+      </div>
+    </div>
+  );
+}
 
 function AppRouter() {
   const { path, toast, dismissToast } = useStore();
@@ -53,7 +82,7 @@ function AppRouter() {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.26, ease: PAGE_EASE }}
         >
-          {view}
+          <Suspense fallback={<RouteFallback />}>{view}</Suspense>
         </motion.div>
       </AnimatePresence>
 

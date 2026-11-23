@@ -1,0 +1,11 @@
+# Exclude local test/verification artifacts and unused workspace reference screenshots from Vercel uploads
+.playwright-cli
+.aistudio
+public/assets/aistudio
+*.test.ts
+*.log
+.env
+.env.local
+.env.*.local
+dist
+node_modules

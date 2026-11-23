@@ -22,10 +22,21 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
+    app.use(
+      express.static(distPath, {
+        maxAge: '1y',
+        immutable: true,
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+          }
+        },
+      })
+    );
     app.get('*', (_req, res) => {
       const indexFile = path.join(distPath, 'index.html');
       if (fs.existsSync(indexFile)) {
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
         res.sendFile(indexFile);
       } else {
         res.status(404).send('Build output not found.');

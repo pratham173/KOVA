@@ -16,7 +16,7 @@ import { formatCurrency } from '../lib/commerce';
 import type { Category, Product } from '../types/store';
 import { ProductImage } from './ProductImage';
 
-const HERO_IMAGE = '/src/assets/images/hero_kova_collection_1795282144091.jpg';
+import HERO_IMAGE from '../assets/images/hero_kova_collection_1795282144091.jpg';
 const ARC_LAMP_IMAGE = '/src/assets/images/product_arc_lamp_1795282162126.jpg';
 const CARAFE_IMAGE = '/src/assets/images/product_stoneware_carafe_1795282144095.jpg';
 const TRAY_IMAGE = '/src/assets/images/product_monolith_tray_1795282143935.jpg';
@@ -271,6 +271,9 @@ export function HomeView() {
             <ProductImage
               src={HERO_IMAGE}
               alt="KOVA studio collection of spun aluminum lamps, fluted stoneware carafe, and milled tray"
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
               className="w-full h-full object-cover"
             />
           </motion.div>
@@ -325,6 +328,7 @@ export function HomeView() {
                 <ProductImage
                   src={ARC_LAMP_IMAGE}
                   alt="Arc Desk Lamp"
+                  loading="eager"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>

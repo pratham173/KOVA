@@ -44,6 +44,7 @@ import {
   verifyAndProcessPayment,
 } from './paymentService.ts';
 import { getPublicPaymentConfig, issueSandboxSignedCallback } from './razorpay.ts';
+import { applyPublicCatalogCache, applyPublicConfigCache } from './cacheHeaders.ts';
 
 export const apiRouter = express.Router();
 
@@ -153,6 +154,7 @@ apiRouter.get('/categories', async (_req, res) => {
 
     const countMap = new Map(counts.map((c) => [c.categoryId, Number(c.productCount)]));
 
+    applyPublicCatalogCache(res);
     res.json({
       categories: catRows.map((c) => ({
         ...c,
@@ -254,6 +256,7 @@ apiRouter.get('/products', async (req, res) => {
       .where(and(...conditions))
       .orderBy(...orderByClause);
 
+    applyPublicCatalogCache(res);
     res.json({ products: rows });
   } catch (error) {
     console.error('GET /api/products failed:', error);
@@ -314,6 +317,7 @@ apiRouter.get('/products/:slug', async (req, res) => {
       .orderBy(desc(products.isFeatured), asc(products.id))
       .limit(3);
 
+    applyPublicCatalogCache(res);
     res.json({ product, related });
   } catch (error) {
     console.error('GET /api/products/:slug failed:', error);
@@ -651,6 +655,7 @@ apiRouter.post('/cart/merge', requireAuth, async (req: AuthRequest, res) => {
 // ==================== CHECKOUT & VERIFIED PAYMENTS ====================
 
 apiRouter.get('/payments/config', (_req, res) => {
+  applyPublicConfigCache(res);
   res.json(getPublicPaymentConfig());
 });
 

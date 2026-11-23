@@ -1,9 +1,24 @@
 import express from 'express';
 import { apiRouter } from './routes.ts';
+import { applyPrivateNoStore } from './cacheHeaders.ts';
 
 export function createApiApp(): express.Express {
   const app = express();
+  app.disable('x-powered-by');
   app.set('trust proxy', 1);
+  app.set('etag', 'strong');
+
+  // Security headers and safe private default for all API responses
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
+
+  app.use('/api', (_req, res, next) => {
+    applyPrivateNoStore(res);
+    next();
+  });
 
   // Capture raw request body for Razorpay webhook HMAC verification
   app.use(

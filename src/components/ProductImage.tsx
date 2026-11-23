@@ -8,6 +8,9 @@ interface ProductImageProps {
   className?: string;
   style?: CSSProperties;
   draggable?: boolean;
+  loading?: 'eager' | 'lazy';
+  decoding?: 'sync' | 'async' | 'auto';
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 export function ProductImage({
@@ -16,6 +19,9 @@ export function ProductImage({
   className = '',
   style,
   draggable,
+  loading = 'lazy',
+  decoding = 'async',
+  fetchPriority = 'auto',
 }: ProductImageProps) {
   const [failed, setFailed] = useState(false);
 
@@ -42,6 +48,9 @@ export function ProductImage({
       alt={alt}
       style={style}
       draggable={draggable}
+      loading={loading}
+      decoding={decoding}
+      fetchPriority={fetchPriority}
       referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
       className={className}
