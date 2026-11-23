@@ -23,7 +23,7 @@ import {
   upsertGoogleUser,
   type AuthRequest,
 } from '../middleware/auth.ts';
-import { adminAuth } from '../lib/firebase-admin.ts';
+import { verifyFirebaseIdToken } from '../lib/firebase-admin.ts';
 import {
   hashPassword,
   verifyPassword,
@@ -513,7 +513,7 @@ apiRouter.post('/auth/google', async (req, res) => {
   }
 
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await verifyFirebaseIdToken(idToken);
     const email = decoded.email || `${decoded.uid}@google.local`;
     const name = decoded.name || email.split('@')[0] || 'Customer';
     const user = await upsertGoogleUser(decoded.uid, email, name);

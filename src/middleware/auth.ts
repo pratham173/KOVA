@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { and, eq, gt } from 'drizzle-orm';
-import { adminAuth } from '../lib/firebase-admin.ts';
+import { verifyFirebaseIdToken } from '../lib/firebase-admin.ts';
 import { db } from '../db/index.ts';
 import { userSessions, users } from '../db/schema.ts';
 import { getAdminEmailAllowlist } from '../db/seed.ts';
@@ -150,7 +150,7 @@ async function resolveUserFromToken(token: string): Promise<DbUser | null> {
 
   // 2. Firebase ID token (Google Sign-In)
   try {
-    const decoded = await adminAuth.verifyIdToken(token);
+    const decoded = await verifyFirebaseIdToken(token);
     const email = decoded.email || `${decoded.uid}@google.local`;
     const name = decoded.name || email.split('@')[0] || 'Customer';
     return await upsertGoogleUser(decoded.uid, email, name);

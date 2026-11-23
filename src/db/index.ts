@@ -8,12 +8,13 @@ declare global {
 }
 
 function getConnectionString(): string | undefined {
-  return (
+  const raw =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRES_PRISMA_URL ||
-    undefined
-  );
+    '';
+  const cleaned = raw.trim().replace(/^["']|["']$/g, '');
+  return cleaned || undefined;
 }
 
 export const isDatabaseConfigured = Boolean(getConnectionString() || process.env.SQL_HOST);
